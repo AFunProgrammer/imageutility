@@ -1,12 +1,30 @@
 #include "imageutility.h"
 #include "ui_imageutility.h"
 
+
 #include <QFileDialog>
 #include <QFile>
 #include <QClipboard>
 #include <QPropertyAnimation>
 #include <QWidget>
 #include <QStyle>
+
+#include <QVariant>
+#include <QtGlobal>
+
+#include <QAndroidJniObject>
+
+void openDocument() {
+    QAndroidJniObject intent("android/content/Intent", "(Ljava/lang/String;)V",
+                             QAndroidJniObject::getStaticObjectField("android/content/Intent", "ACTION_OPEN_DOCUMENT", "Ljava/lang/String;").object<jstring>());
+
+    intent.callObjectMethod("setType", "(Ljava/lang/String;)Landroid/content/Intent;",
+                            QAndroidJniObject::fromString("*/*").object<jstring>()); // Set the MIME type to accept all file types
+
+    QAndroidJniObject activity = QtAndroid::androidActivity();
+    activity.callMethod<void>("startActivityForResult", "(Landroid/content/Intent;I)V",
+                              intent.object<jobject>(), 100); // 100 is a request code
+}
 
 class FadingMessage : public QLabel {
 public:
@@ -48,14 +66,29 @@ ImageUtility::ImageUtility(QWidget *parent)
     ui->setupUi(this);
 
     ui->btnOpen->connect(ui->btnOpen, &QPushButton::clicked, [this](){
-        QString fileName = QFileDialog::getOpenFileName(this,
-                                                        tr("Open Image"),
-                                                        "/home/user",
-                                                        tr("Image Files (*.png *.jpg *.bmp)"));
 
-        if ( QFile(fileName).exists() == false ){
+        QString fileFilter = "Image Files (*.png *.jpg *.bmp)";
+        QString homePath = "/home/user";
+
+#if defined(Q_OS_ANDROID)
+        void MyActivity::onActivityResult(int requestCode, int resultCode, const QAndroidJniObject &data) {
+            if (requestCode == 100 && resultCode == RESULT_OK) {
+                QAndroidJniObject uri = data.callObjectMethod("getData", "()Landroid/net/Uri;");
+                // Process the URI
+            }
+        }
+#endif
+        QFileDialog openDialog = QFileDialog(this,"Open Image File",homePath,fileFilter);
+        //openDialog.setOption(QFileDialog::DontUseNativeDialog, true);
+        openDialog.setFileMode(QFileDialog::ExistingFile);
+
+        int result = openDialog.exec();
+        if ( result != QDialog::Accepted ){
+            ui->lblImage->setText("Some Kind of Magical Error Occurred: " + QString(QVariant(result).toString()));
             return;
         }
+
+        QString fileName = openDialog.selectedFiles().first();
 
         if ( m_ImageFile ){
             delete m_ImageFile;
@@ -66,8 +99,6 @@ ImageUtility::ImageUtility(QWidget *parent)
         // Set the image to be displayed
         QSize imageSize = ui->lblImage->size();
         ui->lblImage->setPixmap(m_ImageFile->scaled(imageSize, Qt::KeepAspectRatio, Qt::SmoothTransformation));
-
-
     });
 
 
