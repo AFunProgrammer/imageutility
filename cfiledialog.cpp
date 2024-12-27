@@ -63,6 +63,12 @@ CFileDialog::CFileDialog(QWidget *parent)
     : QDialog(parent)
     , ui(new Ui::CFileDialog)
 {
+    //set the geometry before updating ui components
+    if ( parent ){
+        this->setGeometry(parent->geometry());
+    }
+
+    //setup ui components
     ui->setupUi(this);
 
     // Populate Initial Data

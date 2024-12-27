@@ -7,11 +7,14 @@
 
 #include <QFileDialog>
 #include <QFile>
+#include <QLabel>
 #include <QClipboard>
 #include <QMimeData>
+#include <QGraphicsPixmapItem>
 #include <QPropertyAnimation>
-#include <QWidget>
 #include <QStyle>
+#include <QTimer>
+#include <QWidget>
 
 #include <QVariant>
 #include <QtGlobal>
@@ -63,10 +66,6 @@ ImageUtility::ImageUtility(QWidget *parent)
 
         CFileDialog fileDialog(this);
 
-        //fileDialog.connect(fileDialog, &QDialog::finished, [](int result){
-        //              qDebug() << "result was: " << result;
-        //});
-
         fileDialog.setModal(true);
         fileDialog.exec();
         int result = fileDialog.result();
@@ -86,11 +85,9 @@ ImageUtility::ImageUtility(QWidget *parent)
         m_ImagePath = filePath;
         m_ImageFile = new QPixmap(filePath);
 
-        // Set the image to be displayed
-        QSize imageSize = ui->lblImage->size();
-        ui->lblImage->setPixmap(m_ImageFile->scaled(imageSize, Qt::KeepAspectRatio, Qt::SmoothTransformation));
-    });
+        updateGraphicsScene();
 
+    });
 
     ui->btnCopy->connect(ui->btnCopy, &QPushButton::clicked, [this](){
         if ( !m_ImageFile ){
@@ -112,12 +109,12 @@ ImageUtility::ImageUtility(QWidget *parent)
 
         // Calling "setImage" doesn't produce SIGABORT bug
         QApplication::clipboard()->setImage(m_ImageFile->toImage(),QClipboard::Clipboard);
-        showFadingMessage("Copied Image To Clipboard",ui->lblImage);
+        showFadingMessage("Copied Image To Clipboard",ui->gvDisplay);
 
 #if defined(Q_OS_ANDROID) // cannot copy image data without being a content provider (no raw pixel data) on android
         QMimeData* data = new QMimeData();
         data->setUrls(QList<QUrl>() << QUrl::fromLocalFile(m_ImagePath));
-        showFadingMessage(data->text(),ui->lblImage);
+        showFadingMessage(data->text(),ui->gvDisplay);
 
         QApplication::clipboard()->setMimeData(data);
         QApplication::clipboard()->setText(data->text());
@@ -127,6 +124,42 @@ ImageUtility::ImageUtility(QWidget *parent)
 
 
     ui->btnClose->connect(ui->btnClose, &QPushButton::clicked, qApp, &QCoreApplication::quit);
+}
+
+
+void ImageUtility::resizeEvent(QResizeEvent* event){
+    QTimer::singleShot(50, this, &ImageUtility::updateGraphicsScene);
+
+    QMainWindow::resizeEvent(event);
+}
+
+void ImageUtility::updateGraphicsScene()
+{
+    QRectF sceneRect = ui->gvDisplay->geometry().toRectF();
+    //sceneRect.adjust(2,2,-4,-4);
+
+    m_GraphicsScene.setSceneRect(sceneRect);
+    m_GraphicsScene.clear();
+    m_GraphicsScene.addRect(sceneRect,QPen(Qt::black),QBrush(Qt::black));
+
+    // Set the image to be displayed
+    if ( m_ImageFile ){
+        QSize imageSize = sceneRect.size().toSize();
+        //QGraphicsPixmapItem pixmap = QGraphicsPixmapItem(m_ImageFile->scaled(imageSize, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+        //pixmap.setPos(sceneRect.width()/2,sceneRect.height()/2);
+        m_GraphicsScene.addPixmap(m_ImageFile->scaled(imageSize, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+        auto pixmap = m_GraphicsScene.items()[0];
+
+        auto pixmaprect = pixmap->boundingRect();
+        pixmap->setPos((sceneRect.width()-pixmaprect.width())/2, (sceneRect.height()-pixmaprect.height())/2);
+    }
+
+    ui->gvDisplay->setScene(&m_GraphicsScene);
+    ui->gvDisplay->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    ui->gvDisplay->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    ui->gvDisplay->setContentsMargins(0,0,0,0);
+
+    ui->gvDisplay->update();
 }
 
 ImageUtility::~ImageUtility()
