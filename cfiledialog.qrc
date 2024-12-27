@@ -1,0 +1,9 @@
+<RCC>
+    <qresource prefix="/image">
+        <file alias="sortdate">android/assets/sortdate.png</file>
+        <file alias="sortname">android/assets/sortname.png</file>
+        <file alias="sorttype">android/assets/sorttype.png</file>
+        <file alias="sortasc">android/assets/sortasc.png</file>
+        <file alias="sortdsc">android/assets/sortdsc.png</file>
+    </qresource>
+</RCC>
