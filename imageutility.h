@@ -19,6 +19,7 @@ public:
     ~ImageUtility();
 
 private:
+    QString  m_ImagePath = "";
     QPixmap* m_ImageFile = nullptr;
     Ui::ImageUtility *ui;
 };

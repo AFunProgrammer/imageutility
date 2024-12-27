@@ -1,10 +1,14 @@
 #include "imageutility.h"
 #include "ui_imageutility.h"
 
+#include "cfiledialog.h"
+
+#include <QDebug>
 
 #include <QFileDialog>
 #include <QFile>
 #include <QClipboard>
+#include <QMimeData>
 #include <QPropertyAnimation>
 #include <QWidget>
 #include <QStyle>
@@ -12,19 +16,6 @@
 #include <QVariant>
 #include <QtGlobal>
 
-#include <QAndroidJniObject>
-
-void openDocument() {
-    QAndroidJniObject intent("android/content/Intent", "(Ljava/lang/String;)V",
-                             QAndroidJniObject::getStaticObjectField("android/content/Intent", "ACTION_OPEN_DOCUMENT", "Ljava/lang/String;").object<jstring>());
-
-    intent.callObjectMethod("setType", "(Ljava/lang/String;)Landroid/content/Intent;",
-                            QAndroidJniObject::fromString("*/*").object<jstring>()); // Set the MIME type to accept all file types
-
-    QAndroidJniObject activity = QtAndroid::androidActivity();
-    activity.callMethod<void>("startActivityForResult", "(Landroid/content/Intent;I)V",
-                              intent.object<jobject>(), 100); // 100 is a request code
-}
 
 class FadingMessage : public QLabel {
 public:
@@ -70,31 +61,30 @@ ImageUtility::ImageUtility(QWidget *parent)
         QString fileFilter = "Image Files (*.png *.jpg *.bmp)";
         QString homePath = "/home/user";
 
-#if defined(Q_OS_ANDROID)
-        void MyActivity::onActivityResult(int requestCode, int resultCode, const QAndroidJniObject &data) {
-            if (requestCode == 100 && resultCode == RESULT_OK) {
-                QAndroidJniObject uri = data.callObjectMethod("getData", "()Landroid/net/Uri;");
-                // Process the URI
-            }
-        }
-#endif
-        QFileDialog openDialog = QFileDialog(this,"Open Image File",homePath,fileFilter);
-        //openDialog.setOption(QFileDialog::DontUseNativeDialog, true);
-        openDialog.setFileMode(QFileDialog::ExistingFile);
+        CFileDialog fileDialog(this);
 
-        int result = openDialog.exec();
-        if ( result != QDialog::Accepted ){
-            ui->lblImage->setText("Some Kind of Magical Error Occurred: " + QString(QVariant(result).toString()));
+        //fileDialog.connect(fileDialog, &QDialog::finished, [](int result){
+        //              qDebug() << "result was: " << result;
+        //});
+
+        fileDialog.setModal(true);
+        fileDialog.exec();
+        int result = fileDialog.result();
+
+        qDebug() << "result from dialog was: " << result << " recorded info: " << fileDialog.getFilePath();
+
+        if ( result == QDialog::Rejected ){
             return;
         }
 
-        QString fileName = openDialog.selectedFiles().first();
+        QString filePath = fileDialog.getFilePath();
 
         if ( m_ImageFile ){
             delete m_ImageFile;
         }
 
-        m_ImageFile = new QPixmap(fileName);
+        m_ImagePath = filePath;
+        m_ImageFile = new QPixmap(filePath);
 
         // Set the image to be displayed
         QSize imageSize = ui->lblImage->size();
@@ -122,8 +112,17 @@ ImageUtility::ImageUtility(QWidget *parent)
 
         // Calling "setImage" doesn't produce SIGABORT bug
         QApplication::clipboard()->setImage(m_ImageFile->toImage(),QClipboard::Clipboard);
-
         showFadingMessage("Copied Image To Clipboard",ui->lblImage);
+
+#if defined(Q_OS_ANDROID) // cannot copy image data without being a content provider (no raw pixel data) on android
+        QMimeData* data = new QMimeData();
+        data->setUrls(QList<QUrl>() << QUrl::fromLocalFile(m_ImagePath));
+        showFadingMessage(data->text(),ui->lblImage);
+
+        QApplication::clipboard()->setMimeData(data);
+        QApplication::clipboard()->setText(data->text());
+#endif
+
     });
 
 
