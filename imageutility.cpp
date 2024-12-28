@@ -70,13 +70,13 @@ ImageUtility::ImageUtility(QWidget *parent)
         fileDialog.exec();
         int result = fileDialog.result();
 
-        qDebug() << "result from dialog was: " << result << " recorded info: " << fileDialog.getFilePath();
+        qDebug() << "result from dialog was: " << result << " recorded info: " << fileDialog.filePath();
 
         if ( result == QDialog::Rejected ){
             return;
         }
 
-        QString filePath = fileDialog.getFilePath();
+        QString filePath = fileDialog.filePath();
 
         if ( m_ImageFile ){
             delete m_ImageFile;

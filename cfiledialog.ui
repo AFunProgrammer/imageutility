@@ -299,6 +299,16 @@
        <property name="text">
         <string>Cancel</string>
        </property>
+       <property name="icon">
+        <iconset resource="cfiledialog.qrc">
+         <normaloff>:/image/rejected</normaloff>:/image/rejected</iconset>
+       </property>
+       <property name="iconSize">
+        <size>
+         <width>24</width>
+         <height>24</height>
+        </size>
+       </property>
       </widget>
      </item>
      <item>
@@ -312,6 +322,16 @@
        <property name="text">
         <string>Okay</string>
        </property>
+       <property name="icon">
+        <iconset resource="cfiledialog.qrc">
+         <normaloff>:/image/accepted</normaloff>:/image/accepted</iconset>
+       </property>
+       <property name="iconSize">
+        <size>
+         <width>24</width>
+         <height>24</height>
+        </size>
+       </property>
       </widget>
      </item>
     </layout>
@@ -320,6 +340,12 @@
     <widget class="QListView" name="lvDirectory">
      <property name="editTriggers">
       <set>QAbstractItemView::NoEditTriggers</set>
+     </property>
+     <property name="iconSize">
+      <size>
+       <width>24</width>
+       <height>24</height>
+      </size>
      </property>
     </widget>
    </item>

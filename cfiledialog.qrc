@@ -5,5 +5,14 @@
         <file alias="sorttype">android/assets/sorttype.png</file>
         <file alias="sortasc">android/assets/sortasc.png</file>
         <file alias="sortdsc">android/assets/sortdsc.png</file>
+        <file alias="rejected">android/assets/rejected.png</file>
+        <file alias="filevideo">android/assets/filevideo.png</file>
+        <file alias="fileunknown">android/assets/fileunknown.png</file>
+        <file alias="filepicture">android/assets/filepicture.png</file>
+        <file alias="filemusic">android/assets/filemusic.png</file>
+        <file alias="filefolder">android/assets/filefolder.png</file>
+        <file alias="filedocument">android/assets/filedocument.png</file>
+        <file alias="filebinary">android/assets/filebinary.png</file>
+        <file alias="accepted">android/assets/accepted.png</file>
     </qresource>
 </RCC>

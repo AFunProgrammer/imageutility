@@ -1,7 +1,10 @@
 #ifndef CFILEDIALOG_H
 #define CFILEDIALOG_H
 
+#pragma once
 #include <QDialog>
+#include <QDir>
+#include <QListView>
 
 namespace Ui {
 class CFileDialog;
@@ -15,15 +18,20 @@ public:
     explicit CFileDialog(QWidget *parent = nullptr);
     ~CFileDialog();
 
-    QString getFilePath();
-    QString getFileName();
-    QString getFileDirectory();
+    QString filePath();
+    QString fileName();
+    QString fileDirectory();
 
 private:
     Ui::CFileDialog *ui;
     QString m_filePath;
     QString m_fileName;
     QString m_directory;
+
+    QMap<QString,QIcon> m_fileIcons;
+
+    void loadResources();
+    void populateListViewWithDirectory(QListView* pListView, QDir directory);
 };
 
 #endif // CFILEDIALOG_H

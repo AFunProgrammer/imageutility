@@ -1,12 +1,12 @@
 #include "cfiledialog.h"
 #include "ui_cfiledialog.h"
 
-#include <QDir>
 #include <QFile>
 #include <QFileInfo>
 
 #include <QStandardPaths>
 #include <QStringListModel>
+#include <QStandardItemModel>
 
 
 void changeWidgetFontColor(QWidget* pWidget, QColor color)
@@ -40,19 +40,47 @@ void populateComboBoxWithKnownPaths(QComboBox* pComboBox){
 }
 
 
-void populateListViewWithDirectory(QListView* pListView, QDir directory)
+void CFileDialog::populateListViewWithDirectory(QListView* pListView, QDir directory)
 {
     if ( !pListView ){
         return;
     }
 
-    QStringList dirEntries = directory.entryList(QDir::NoFilter,QDir::DirsFirst);
-    QStringListModel *model;
+    QFileInfoList entries = directory.entryInfoList(QDir::NoFilter, QDir::DirsFirst);
+    QStandardItemModel *model;
 
-    model = new QStringListModel(pListView);
+    model = new QStandardItemModel(0,1,pListView);
 
-    model->setStringList(dirEntries);
+    for( QFileInfo entry: entries ){
+        QStringList split = entry.fileName().split('.');
+        QString ext = split[split.count()-1];
+        QIcon icon;
+
+        if ( entry.isFile() ){
+            if ( ext == "doc" || ext == "xls" || ext == "txt" || ext == "log" || ext == "cfg" || ext == "ini" ){
+                icon = m_fileIcons["document"];
+            } else if ( ext == "bin" || ext == "exe" || ext == "so" || ext == "lib" ){
+                icon = m_fileIcons["binary"];
+            }else if ( ext == "mp3" || ext == "wav" || ext == "aac" || ext == "pfm" ){
+                icon = m_fileIcons["music"];
+            }else if ( ext == "mp4" || ext == "mov" || ext == "avi" || ext == "mkv" ){
+                icon = m_fileIcons["video"];
+            }else if ( ext == "jpg" || ext == "jpeg" || ext == "png" || ext == "gif" ){
+                icon = m_fileIcons["picture"];
+            } else {
+                icon = m_fileIcons["unknown"];
+            }
+        } else if ( entry.isDir() ){
+            icon = m_fileIcons["folder"];
+        } else {
+            icon = m_fileIcons["unknown"];
+        }
+
+        QStandardItem* pAddItem = new QStandardItem(icon,entry.fileName());
+        model->appendRow(pAddItem);
+    }
     pListView->setModel(model);
+    pListView->setIconSize(QSize(32,32));
 
     //delete oldModel;
 }
@@ -70,6 +98,9 @@ CFileDialog::CFileDialog(QWidget *parent)
 
     //setup ui components
     ui->setupUi(this);
+
+    //get all resources to be used
+    loadResources();
 
     // Populate Initial Data
     populateComboBoxWithKnownPaths(ui->cbPathList);
@@ -136,20 +167,33 @@ CFileDialog::CFileDialog(QWidget *parent)
 }
 
 
-QString CFileDialog::getFilePath()
+QString CFileDialog::filePath()
 {
     return m_filePath;
 }
 
-QString CFileDialog::getFileName()
+QString CFileDialog::fileName()
 {
     return m_fileName;
 }
 
-QString CFileDialog::getFileDirectory()
+QString CFileDialog::fileDirectory()
 {
     return m_directory;
 }
+
+void CFileDialog::loadResources(){
+    m_fileIcons["binary"] = QIcon(":/image/filebinary");
+    m_fileIcons["document"] = QIcon(":/image/filedocument");
+    m_fileIcons["folder"] = QIcon(":/image/filefolder");
+    m_fileIcons["music"] = QIcon(":/image/filemusic");
+    m_fileIcons["picture"] = QIcon(":/image/filepicture");
+    m_fileIcons["unknown"] = QIcon(":/image/fileunknown");
+    m_fileIcons["video"] = QIcon(":/image/filevideo");
+
+    qDebug() << "Available Icon Sizes: " << m_fileIcons["video"].availableSizes();
+}
+
 
 
 CFileDialog::~CFileDialog()
