@@ -67,6 +67,9 @@ ImageUtility::ImageUtility(QWidget *parent)
         CFileDialog fileDialog(this);
 
         fileDialog.setModal(true);
+#if defined(Q_OS_ANDROID)
+        fileDialog.setWindowState(Qt::WindowMaximized);
+#endif
         fileDialog.exec();
         int result = fileDialog.result();
 

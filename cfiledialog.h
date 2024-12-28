@@ -30,6 +30,9 @@ private:
 
     QMap<QString,QIcon> m_fileIcons;
 
+    bool updateFileListView();
+
+    QDir::SortFlags getSortFlags();
     void loadResources();
     void populateListViewWithDirectory(QListView* pListView, QDir directory);
 };

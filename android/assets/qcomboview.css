@@ -1,0 +1,5 @@
+/* Customize the pushbutton */
+QPushButton{
+    width: 30px;
+    min-width: 30px;
+}

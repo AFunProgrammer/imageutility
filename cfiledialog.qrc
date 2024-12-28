@@ -15,4 +15,8 @@
         <file alias="filebinary">android/assets/filebinary.png</file>
         <file alias="accepted">android/assets/accepted.png</file>
     </qresource>
+    <qresource prefix="/styles">
+        <file alias="qlistview.css">android/assets/qlistview.css</file>
+        <file alias="qcomboview.css">android/assets/qcomboview.css</file>
+    </qresource>
 </RCC>

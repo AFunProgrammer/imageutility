@@ -40,13 +40,47 @@ void populateComboBoxWithKnownPaths(QComboBox* pComboBox){
 }
 
 
+QDir::SortFlags CFileDialog::getSortFlags(){
+    QDir::SortFlags sortFlags = QDir::DirsFirst;
+
+    if ( ui->btnSortName->isChecked() ){
+        sortFlags |= QDir::Name;
+    } else if ( ui->btnSortType->isChecked() ){
+        sortFlags |= QDir::Type;
+    } else if ( ui->btnSortDate->isChecked() ){
+        sortFlags |= QDir::Time;
+    }
+
+    if ( ui->btnSortDsc->isChecked() ){
+        sortFlags |= QDir::Reversed;
+    }
+
+    return sortFlags;
+}
+
+bool CFileDialog::updateFileListView(){
+    //validate is an existing path
+    if ( QDir(ui->cbPathList->currentText()).exists() == false ){
+        return false;
+    }
+
+    this->m_directory = ui->cbPathList->currentText();
+    // draw now just in case retrieving directory data takes too long
+    ui->cbPathList->update();
+    // get the directory data
+    populateListViewWithDirectory(ui->lvDirectory, this->m_directory);
+
+    return true;
+}
+
+
 void CFileDialog::populateListViewWithDirectory(QListView* pListView, QDir directory)
 {
     if ( !pListView ){
         return;
     }
 
-    QFileInfoList entries = directory.entryInfoList(QDir::NoFilter, QDir::DirsFirst);
+    QFileInfoList entries = directory.entryInfoList(QDir::NoFilter, getSortFlags());
     QStandardItemModel *model;
 
     model = new QStandardItemModel(0,1,pListView);
@@ -139,19 +173,20 @@ CFileDialog::CFileDialog(QWidget *parent)
         }
 
         //validate is an existing path
-        if ( QDir(ui->cbPathList->currentText()).exists() ){
+        if ( updateFileListView() ){
             changeWidgetFontColor(ui->cbPathList, Qt::black);
-            this->m_directory = ui->cbPathList->currentText();
-            // draw now just in case retrieving directory data takes too long
-            ui->cbPathList->update();
-            // get the directory data
-            populateListViewWithDirectory(ui->lvDirectory, this->m_directory);
         } else { // is not a valid path so gray out the text
             changeWidgetFontColor(ui->cbPathList, Qt::gray);
         }
     });
 
     // Setup Ui Buttons
+    ui->btnSortName->connect(ui->btnSortName, &QPushButton::clicked, [this](){updateFileListView();});
+    ui->btnSortType->connect(ui->btnSortType, &QPushButton::clicked, [this](){updateFileListView();});
+    ui->btnSortDate->connect(ui->btnSortDate, &QPushButton::clicked, [this](){updateFileListView();});
+    ui->btnSortAsc->connect(ui->btnSortAsc, &QPushButton::clicked, [this](){updateFileListView();});
+    ui->btnSortDsc->connect(ui->btnSortDsc, &QPushButton::clicked, [this](){updateFileListView();});
+
     ui->btnCancel->connect(ui->btnCancel, &QPushButton::clicked, [this](){
         this->close();
     });
@@ -159,6 +194,7 @@ CFileDialog::CFileDialog(QWidget *parent)
     ui->btnOkay->connect(ui->btnOkay, &QPushButton::clicked, [this](){
         if ( m_fileName == "" || m_filePath == "" ){
             this->reject();
+            return;
         }
 
         this->accept();
@@ -191,7 +227,25 @@ void CFileDialog::loadResources(){
     m_fileIcons["unknown"] = QIcon(":/image/fileunknown");
     m_fileIcons["video"] = QIcon(":/image/filevideo");
 
-    qDebug() << "Available Icon Sizes: " << m_fileIcons["video"].availableSizes();
+    //qDebug() << "Available Icon Sizes: " << m_fileIcons["video"].availableSizes();
+
+#if defined(Q_OS_ANDROID)
+    // Load the qlistview.css from the qrc resource
+    QFile file(":/styles/qlistview.css");  // Path to the resource alias
+    if (file.open(QFile::ReadOnly | QFile::Text)) {
+        QTextStream ts(&file);
+        QString css = ts.readAll();  // Read the content as a string
+
+        QColor highlight = ui->lvDirectory->palette().highlight().color();
+        QString highlightCss = QString("background: rgb(%0,%1,%2);").arg(highlight.red()).arg(highlight.green()).arg(highlight.blue());
+        QString highlightCssDark = QString("background: rgb(%0,%1,%2);").arg(highlight.red()/1.5).arg(highlight.green()/1.5).arg(highlight.blue()/1.5);
+
+        css = css.replace("background: rgb(0,0,0);", highlightCss);
+        css = css.replace("background: rgb(1,1,1);", highlightCssDark);
+
+        ui->lvDirectory->setStyleSheet(css); // Apply the CSS to trvFound
+    }
+#endif
 }
 
 
